@@ -1,4 +1,5 @@
 use axum::extract::WebSocketUpgrade;
+use axum::response::IntoResponse;
 use axum::{extract::ws, extract::State, routing::get, Router};
 use axum_chat::hub::{Hub, HubOptions};
 use axum_chat::proto::InputParcel;
@@ -41,7 +42,7 @@ async fn main() {
     let routes = Router::new()
         .route("/feed", axum::routing::get(websocket_handler))
         .with_state(app_state);
-    let srv = hyper::Server::bind(&SocketAddr::from(([127, 0, 0, 1], 8080)))
+    let srv = axum::Server::bind(&SocketAddr::from(([127, 0, 0, 1], 8080)))
         .serve(routes.into_make_service())
         .with_graceful_shutdown(shutdown());
 
@@ -53,12 +54,15 @@ async fn main() {
     }
 }
 
-async fn websocket_handler(ws: ws::WebSocketUpgrade, State(state): State<Arc<AppState>>) {
-    let _ = ws
-        .max_frame_size(MAX_FRAME_SIZE)
+async fn websocket_handler(
+    ws: ws::WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    // add code here
+    ws.max_frame_size(MAX_FRAME_SIZE)
         .on_upgrade(move |socket| async move {
             tokio::spawn(process_client(socket, state));
-        });
+        })
 }
 
 async fn process_client(web_socket: ws::WebSocket, state: Arc<AppState>) {

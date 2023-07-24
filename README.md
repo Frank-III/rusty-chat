@@ -1,4 +1,5 @@
-# Rusty Chat
+# Rusty Chat with Axum
+For study purpose, modified from original repo, with Axum as the server
 
 <p align="center">
   <img src="./cover.jpg"/>
