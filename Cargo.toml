@@ -1,5 +1,5 @@
 [package]
-name = "rusty-chat"
+name = "axum-chat"
 version = "0.1.0"
 authors = ["Tin Rabzelj <tin@flinect.com>"]
 edition = "2018"
@@ -14,5 +14,7 @@ regex = "1.3.7"
 lazy_static = "1.4.0"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
 futures = "0.3.5"
-tokio = { version = "1.8.4", features = ["full"] }
-warp = "0.3.3"
+tokio = { version = "1.8.4", features = ["full", "time"] }
+tokio-stream = { version = "0.1.14", features = ["sync"] }
+axum = { version = "0.6.19", features = ["ws"] }
+hyper = "0.14.27"

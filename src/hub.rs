@@ -4,7 +4,7 @@ use std::time::Duration;
 use chrono::Utc;
 use futures::StreamExt;
 use regex::Regex;
-use tokio::sync::mpsc::UnboundedReceiver;
+// use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::{broadcast, RwLock};
 use tokio::time;
 use uuid::Uuid;
@@ -46,7 +46,10 @@ impl Hub {
         }
     }
 
-    pub async fn run(&self, receiver: UnboundedReceiver<InputParcel>) {
+    pub async fn run(
+        &self,
+        receiver: tokio_stream::wrappers::UnboundedReceiverStream<InputParcel>,
+    ) {
         let ticking_alive = self.tick_alive();
         let processing = receiver.for_each(|input_parcel| self.process(input_parcel));
         tokio::select! {
@@ -187,7 +190,7 @@ impl Hub {
             return;
         };
         loop {
-            time::delay_for(alive_interval).await;
+            time::sleep(alive_interval).await;
             self.send(Output::Alive).await;
         }
     }
@@ -252,8 +255,8 @@ mod tests {
         let hub = Hub::new(HubOptions::default());
         let (sender, receiver) = mpsc::unbounded_channel();
         let mut subscription = hub.subscribe();
-
-        let mut rt = Runtime::new().unwrap();
+        let rev_stream = tokio_stream::wrappers::UnboundedReceiverStream::new(receiver);
+        let rt = Runtime::new().unwrap();
         rt.block_on(async move {
             let case = async {
                 let client_id = Uuid::new_v4();
@@ -293,11 +296,9 @@ mod tests {
                 } else {
                     panic!("Expected Output::Posted got {:?}", output);
                 }
-
-                return;
             };
             tokio::select! {
-              _ = hub.run(receiver) => {},
+              _ = hub.run(rev_stream) => {},
               _ = case => {},
             }
         });
